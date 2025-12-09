@@ -10,12 +10,12 @@ build-wasm:
 build-wasm-dev:
   cd {{ROOT}} && wasm-pack build --target web --out-dir public/wasm --dev
 
-  # Build Next.js for production
-  build-frontend:
-    cd {{ROOT}} && bun run build
-    @echo "Copying static assets for standalone build..."
-    cd {{ROOT}} && cp -r .next/static .next/standalone/.next/static
-    cd {{ROOT}} && cp -r public .next/standalone/public
+# Build Next.js for production
+build-frontend:
+  cd {{ROOT}} && bun run build
+  @echo "Copying static assets for standalone build..."
+  cd {{ROOT}} && cp -r .next/static .next/standalone/.next/static
+  cd {{ROOT}} && cp -r public .next/standalone/public
 # Build everything for production
 build: build-wasm build-frontend
   @echo ""
