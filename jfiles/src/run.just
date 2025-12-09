@@ -2,11 +2,13 @@ import "../common.just"
 
 # Run commands
 
-# Run both API and frontend together (Bash/WSL/Linux/macOS only)
+# Run development mode (Rust + Next.js dev server)
 dev:
   #!/usr/bin/env bash
   set -euo pipefail
   cd "{{ROOT}}"
+  echo "Building WASM (dev)..."
+  wasm-pack build --target web --out-dir public/wasm --dev
   trap 'kill 0' SIGINT
   cargo run --bin server 2>&1 | sed 's/^/[API] /' &
   sleep 2

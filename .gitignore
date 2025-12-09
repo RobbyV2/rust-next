@@ -44,3 +44,14 @@ next-env.d.ts
 
 # Rust
 target/
+debug/
+release/
+*.rs.bk
+*.rlib
+*.prof*
+**/*.rs.bk
+.idea/
+*.iml
+
+# WASM build output
+/public/wasm/

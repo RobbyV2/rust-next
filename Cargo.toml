@@ -3,6 +3,9 @@ name = "rust-next"
 version = "0.1.0"
 edition = "2024"
 
+[workspace]
+members = ["wasm"]
+
 [lib]
 path = "src/lib.rs"
 
