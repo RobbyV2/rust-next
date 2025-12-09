@@ -66,3 +66,6 @@ autowaka_data.*.json
 
 # Project specific
 i.txt
+
+# WASM build output
+/public/wasm/

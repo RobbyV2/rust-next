@@ -20,6 +20,7 @@ This template uses a two-server architecture where Rust is the main entry point:
 ## Features
 
 - **Rust Backend**: Fast, type-safe API server using Axum
+- **Rust WASM**: Client-side Rust code via WebAssembly
 - **Next.js Frontend**: Modern React framework with TypeScript
 - **Single Port Access**: All requests go through Rust server on port 3000
 - **CORS Handling**: Automatic CORS configuration
@@ -32,6 +33,8 @@ This template uses a two-server architecture where Rust is the main entry point:
 
 - Rust (latest stable)
 - Node.js 18+
+- [Bun](https://bun.sh/) (v1.0+)
+- [wasm-pack](https://rustwasm.github.io/wasm-pack/installer/)
 - [just](https://github.com/casey/just) command runner
 
 ### Development Mode
@@ -42,6 +45,7 @@ just src dev
 
 This starts:
 
+- Builds WASM (dev mode)
 - Rust server on port 3000
 - Next.js dev server on port 3001
 - Visit `http://localhost:3000`
@@ -49,14 +53,11 @@ This starts:
 ### Production Mode
 
 ```bash
-just src prod
+just src build-all
+# Run production servers
+./target/release/server    # Terminal 1
+bun start                   # Terminal 2
 ```
-
-This starts:
-
-- Rust server on port 3000
-- Next.js standalone server on port 3001
-- Visit `http://localhost:3000`
 
 ## Project Structure
 
@@ -66,13 +67,29 @@ This starts:
 │   ├── api/           # API route handlers
 │   ├── server/        # Server configuration and routing
 │   └── bin/server.rs  # Main Rust entry point
+├── wasm/              # Rust WASM source
+│   └── src/lib.rs     # WASM entry point
 ├── app/
 │   ├── lib/           # Frontend utilities and API client
 │   ├── page.tsx       # Home page
 │   └── layout.tsx     # Root layout
-├── Cargo.toml         # Rust dependencies
+├── Cargo.toml         # Workspace config
 ├── package.json       # Node.js dependencies
 └── justfile          # Build and run commands
+```
+
+## WASM Support
+
+The template includes support for Rust WASM modules.
+
+1.  Code is in `wasm/src/lib.rs`
+2.  Built to `public/wasm/`
+3.  Loaded in frontend using `import` (see `app/wasm/page.tsx` for example)
+
+To build WASM manually:
+
+```bash
+just src build-wasm
 ```
 
 ## Environment Variables
@@ -117,24 +134,63 @@ export async function myRoute(): Promise<MyResponse> {
 }
 ```
 
-## Customization
+## Development Commands
 
-### Rename Project
-
-1. Update `Cargo.toml`: Change `name = "rust-nextjs-template"`
-2. Update `package.json`: Change `name` and `description`
-3. Update `src/bin/server.rs`: Update import to use new crate name
-4. Update `app/layout.tsx`: Change metadata title
-
-### Update Dependencies
+### Using Just
 
 ```bash
-# Rust dependencies
-cargo update
+just                        # List all available commands
+just src                    # List all src commands
 
-# Node.js dependencies
-npm update
+# Development (run.just)
+just src dev                # Run BOTH servers together (Bash/WSL/Unix only!)
+just src api                # Run Rust API only
+just src frontend           # Run Next.js only
+just src api-release        # Run Rust API (release mode)
+just src frontend-prod      # Run Next.js (production mode)
+
+# Build (build.just)
+just src build              # Build Rust for production
+just src build-api          # Build Rust API for production
+just src build-frontend     # Build Next.js for production
+just src build-wasm         # Build WASM module
+just src build-all          # Build both for production
+just src check              # Check Rust code without building
+
+# Format & Lint (build.just)
+just src fmt                # Format and lint ALL code (Rust + TypeScript)
+just src fmt-check          # Check formatting without changes
+just src fmt-rust           # Format Rust only
+just src fmt-ts             # Format TypeScript only
+
+# Test (test.just)
+just src test               # Run Rust tests
+
+# Maintenance (justfile)
+just src install            # Install dependencies
+just src clean              # Clean build artifacts
 ```
+
+## Tech Stack
+
+### Backend (Rust)
+
+- **axum**: Modern web framework
+- **tokio**: Async runtime
+- **serde/serde_json**: Serialization
+- **tower-http**: HTTP middleware (CORS, tracing)
+- **tracing**: Structured logging
+
+### WASM (Rust)
+
+- **wasm-bindgen**: Rust/JS interoperability
+- **web-sys**: Web APIs
+
+### Frontend (Next.js)
+
+- **React 19**: UI framework
+- **Next.js 16**: React framework with App Router
+- **TypeScript**: Type safety
 
 ## License
 

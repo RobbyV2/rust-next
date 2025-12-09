@@ -11,6 +11,8 @@ dev:
   #!/usr/bin/env bash
   set -euo pipefail
   cd "{{ROOT}}"
+  echo "Building WASM (dev)..."
+  wasm-pack build --target web --out-dir public/wasm --dev
   trap 'kill 0' SIGINT
   PORT=3001 bun run dev 2>&1 | sed 's/^/[WEB] /' &
   sleep 2
@@ -34,6 +36,8 @@ prod:
   #!/usr/bin/env bash
   set -euo pipefail
   cd "{{ROOT}}"
+  echo "Building WASM..."
+  wasm-pack build --target web --out-dir public/wasm --release
   echo "Building frontend..."
   bun run build
   echo "Copying static files for standalone..."
@@ -69,4 +73,3 @@ start-prod:
   sleep 2
   SERVER_PROXY_URL=http://127.0.0.1:3001 ./target/release/server 2>&1 | sed 's/^/[RUST] /' &
   wait
-
