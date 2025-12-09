@@ -1,6 +1,12 @@
-# Rust + Next.js Full-Stack Template
+# rust-next
 
-A production-ready full-stack template with Rust backend (Axum) and Next.js frontend.
+Next.js frontend with Rust backend API server using file-system based routing.
+
+## Branches
+
+- **main**: The active development branch (Rust Backend + Next.js Frontend).
+- **static**: Rust WASM + Next.js (no backend server). Ideal for static hosting.
+- **single-server**: A variation with a single server setup.
 
 ## Architecture
 
