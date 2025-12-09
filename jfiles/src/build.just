@@ -13,6 +13,9 @@ build-api:
 # Build Next.js for production
 build-frontend:
   cd {{ROOT}} && bun run build
+  @echo "Copying static assets for standalone build..."
+  cd {{ROOT}} && cp -r .next/static .next/standalone/.next/static
+  cd {{ROOT}} && cp -r public .next/standalone/public
 
 # Build everything for production
 build-all: build-api build-frontend

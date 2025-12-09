@@ -2,6 +2,12 @@
 
 Next.js frontend with Rust backend API server using file-system based routing.
 
+## Branches
+
+- **main**: The active development branch (Rust Backend + Next.js Frontend).
+- **static**: Rust WASM + Next.js (no backend server). Ideal for static hosting.
+- **single-server**: (If applicable) A variation with a single server setup.
+
 ## Architecture
 
 - **Frontend**: Next.js (React) on port 3000
@@ -331,7 +337,7 @@ just src fmt-check           # Or use just command
 ### Frontend (Next.js)
 
 - **React 19**: UI framework
-- **Next.js 15**: React framework with App Router
+- **Next.js 16**: React framework with App Router
 - **TypeScript**: Type safety
 
 ## Directory-Based Routing Philosophy
