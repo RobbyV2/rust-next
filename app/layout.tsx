@@ -1,6 +1,6 @@
 export const metadata = {
-  title: 'Next.js + Rust API',
-  description: 'Next.js frontend with Rust backend',
+  title: 'Rust WASM + Next.js',
+  description: 'Rust WASM + Next.js template',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

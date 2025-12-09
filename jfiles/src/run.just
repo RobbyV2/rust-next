@@ -2,30 +2,32 @@ import "../common.just"
 
 # Run commands
 
-# Run both API and frontend together (Bash/WSL/Linux/macOS only)
+# Run development mode (build WASM dev + Next.js dev server)
 dev:
   #!/usr/bin/env bash
   set -euo pipefail
   cd "{{ROOT}}"
-  trap 'kill 0' SIGINT
-  cargo run --bin server 2>&1 | sed 's/^/[API] /' &
-  sleep 2
-  bun run dev 2>&1 | sed 's/^/[WEB] /' &
-  wait
+  echo "Building WASM (dev)..."
+  wasm-pack build --target web --out-dir public/wasm --dev
+  echo "Starting Next.js dev server..."
+  bun run dev
 
-# Run Rust API server (development)
-api:
-  cd {{ROOT}} && cargo run --bin server
-
-# Run Rust API server (release mode)
-api-release:
-  cd {{ROOT}} && cargo run --bin server --release
-
-# Run Next.js dev server
+# Run Next.js dev server only (assumes WASM already built)
 frontend:
   cd {{ROOT}} && bun run dev
 
-# Run Next.js production server
-frontend-prod:
-  cd {{ROOT}} && bun start
+# Build and run production
+prod:
+  #!/usr/bin/env bash
+  set -euo pipefail
+  cd "{{ROOT}}"
+  echo "Building WASM..."
+  wasm-pack build --target web --out-dir public/wasm --release
+  echo "Building frontend..."
+  bun run build
+  echo "Starting server..."
+  bun run start
 
+# Run production (assumes already built)
+start-prod:
+  cd {{ROOT}} && bun run start

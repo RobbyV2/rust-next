@@ -1,88 +1,106 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+
+type WasmModule = {
+  greet: (name: string) => string
+  add: (a: number, b: number) => number
+  default(path?: string): Promise<void>
+}
 
 export default function Home() {
-  const [apiResponse, setApiResponse] = useState<any>(null)
-  const [loading, setLoading] = useState(false)
+  const [wasm, setWasm] = useState<WasmModule | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [greeting, setGreeting] = useState<string>('')
+  const [sum, setSum] = useState<number | null>(null)
 
-  const testApi = async (endpoint: string) => {
-    setLoading(true)
-    try {
-      const response = await fetch(endpoint)
-      const data = await response.json()
-      setApiResponse(data)
-    } catch (error) {
-      setApiResponse({ error: 'Failed to fetch' })
+  useEffect(() => {
+    async function loadWasm() {
+      try {
+        const wasmModule = (await import(
+          /* webpackIgnore: true */ '/wasm/rust_next_wasm.js'
+        )) as unknown as WasmModule
+
+        await wasmModule.default('/wasm/rust_next_wasm_bg.wasm')
+        setWasm(wasmModule)
+        setLoading(false)
+      } catch (err) {
+        console.error('WASM load error:', err)
+        setError(`Failed to load WASM: ${err}`)
+        setLoading(false)
+      }
     }
-    setLoading(false)
+
+    loadWasm()
+  }, [])
+
+  const handleGreet = () => {
+    if (wasm) {
+      const result = wasm.greet('World')
+      setGreeting(result)
+    }
   }
 
-  // Environment variables in Next.js
-  const nextjsPublicVar = process.env.NEXT_PUBLIC_API_URL
+  const handleAdd = () => {
+    if (wasm) {
+      const result = wasm.add(40, 2)
+      setSum(result)
+    }
+  }
+
+  if (loading) {
+    return (
+      <main style={{ padding: '2rem', fontFamily: 'system-ui, sans-serif' }}>
+        <h1>Rust WASM + Next.js</h1>
+        <p>Loading WASM module...</p>
+      </main>
+    )
+  }
+
+  if (error) {
+    return (
+      <main style={{ padding: '2rem', fontFamily: 'system-ui, sans-serif' }}>
+        <h1>Rust WASM + Next.js</h1>
+        <p style={{ color: 'red' }}>{error}</p>
+        <p>
+          Make sure to build WASM first:{' '}
+          <code>wasm-pack build --target web --out-dir public/wasm</code>
+        </p>
+      </main>
+    )
+  }
 
   return (
     <main style={{ padding: '2rem', fontFamily: 'system-ui, sans-serif' }}>
-      <h1>Next.js + Rust API</h1>
-      <p>Test the Rust backend API endpoints:</p>
+      <h1>Rust WASM + Next.js</h1>
+      <p>WASM module loaded successfully!</p>
 
-      <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem', flexWrap: 'wrap' }}>
-        <button
-          onClick={() => testApi('/api/hello')}
-          style={{ padding: '0.5rem 1rem', cursor: 'pointer' }}
-        >
-          Test /api/hello
-        </button>
-        <button
-          onClick={() => testApi('/api/greet/World')}
-          style={{ padding: '0.5rem 1rem', cursor: 'pointer' }}
-        >
-          Test /api/greet/World
-        </button>
-        <button
-          onClick={() => testApi('/api/search?q=rust')}
-          style={{ padding: '0.5rem 1rem', cursor: 'pointer' }}
-        >
-          Test /api/search?q=rust
-        </button>
-        <button
-          onClick={() => testApi('/api/env')}
-          style={{ padding: '0.5rem 1rem', cursor: 'pointer', backgroundColor: '#e0f2fe' }}
-        >
-          Test /api/env (Environment Variables)
-        </button>
-      </div>
+      <div style={{ marginTop: '2rem' }}>
+        <h2>Test WASM Functions</h2>
 
-      <div
-        style={{
-          marginTop: '2rem',
-          padding: '1rem',
-          backgroundColor: '#fef3c7',
-          borderRadius: '4px',
-          fontSize: '0.9rem',
-        }}
-      >
-        <strong>Next.js Environment Variable:</strong>
-        <br />
-        NEXT_PUBLIC_API_URL = {nextjsPublicVar || 'not set'}
-      </div>
-
-      {loading && <p style={{ marginTop: '2rem' }}>Loading...</p>}
-
-      {apiResponse && !loading && (
-        <div
-          style={{
-            marginTop: '2rem',
-            padding: '1rem',
-            backgroundColor: '#f5f5f5',
-            borderRadius: '4px',
-            fontFamily: 'monospace',
-          }}
-        >
-          <h3>Response:</h3>
-          <pre>{JSON.stringify(apiResponse, null, 2)}</pre>
+        <div style={{ marginTop: '1rem' }}>
+          <button onClick={handleGreet} style={{ padding: '0.5rem 1rem', cursor: 'pointer' }}>
+            Call greet(&quot;World&quot;)
+          </button>
+          {greeting && (
+            <p style={{ marginTop: '0.5rem', color: 'green' }}>
+              Result: <strong>{greeting}</strong>
+            </p>
+          )}
         </div>
-      )}
+
+        <div style={{ marginTop: '1rem' }}>
+          <button onClick={handleAdd} style={{ padding: '0.5rem 1rem', cursor: 'pointer' }}>
+            Call add(40, 2)
+          </button>
+          {sum !== null && (
+            <p style={{ marginTop: '0.5rem', color: 'green' }}>
+              Result: <strong>{sum}</strong>
+            </p>
+          )}
+        </div>
+      </div>
     </main>
   )
 }

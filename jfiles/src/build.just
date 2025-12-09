@@ -2,23 +2,29 @@ import "../common.just"
 
 # Build commands
 
-# Build Rust for production (optimized)
-build:
-  cd {{ROOT}} && cargo build --release
+# Build WASM module
+build-wasm:
+  cd {{ROOT}} && wasm-pack build --target web --out-dir public/wasm --release
 
-# Build the API server binary for production
-build-api:
-  cd {{ROOT}} && cargo build --release --bin server
+# Build WASM for development (faster, with debug symbols)
+build-wasm-dev:
+  cd {{ROOT}} && wasm-pack build --target web --out-dir public/wasm --dev
 
-# Build Next.js for production
-build-frontend:
-  cd {{ROOT}} && bun run build
-
+  # Build Next.js for production
+  build-frontend:
+    cd {{ROOT}} && bun run build
+    @echo "Copying static assets for standalone build..."
+    cd {{ROOT}} && cp -r .next/static .next/standalone/.next/static
+    cd {{ROOT}} && cp -r public .next/standalone/public
 # Build everything for production
-build-all: build-api build-frontend
+build: build-wasm build-frontend
+  @echo ""
   @echo "Production build complete!"
-  @echo "API binary: {{ROOT}}/target/release/server"
+  @echo "WASM: {{ROOT}}/public/wasm/"
   @echo "Frontend: {{ROOT}}/.next"
+
+# Alias for build
+build-all: build
 
 # Check Rust code without building
 check:
@@ -54,4 +60,4 @@ fmt-ts:
 # Clean build artifacts
 clean:
   cd {{ROOT}} && cargo clean
-  cd {{ROOT}} && rm -rf .next node_modules/.cache
+  cd {{ROOT}} && rm -rf .next node_modules/.cache public/wasm
