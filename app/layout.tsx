@@ -1,11 +1,13 @@
+import './globals.css'
+
 export const metadata = {
-  title: 'Next.js + Rust API',
-  description: 'Next.js frontend with Rust backend',
+  title: 'Rust + Next.js',
+  description: 'Full-stack template with Rust backend and Next.js frontend',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body>{children}</body>
     </html>
   )

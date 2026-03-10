@@ -1,45 +1,31 @@
 use axum::{Router, response::Json, routing::get};
-use serde::Serialize;
-use serde_json::{Value, json};
+use serde_json::json;
 
-#[derive(Debug, Serialize)]
-struct EnvResponse {
-    message: String,
-    data: Value,
-}
+use super::ApiResponse;
 
-/// Define routes for this endpoint
-/// Path: /api/env
-/// Demonstrates reading environment variables in Rust
 pub fn routes() -> Router {
-    Router::new().route("/api/env", get(handler))
+    Router::new().route("/env", get(handler))
 }
 
-async fn handler() -> Json<EnvResponse> {
-    let app_name = std::env::var("APP_NAME").unwrap_or_else(|_| "not set".to_string());
-    let app_env = std::env::var("APP_ENV").unwrap_or_else(|_| "not set".to_string());
-    let api_host = std::env::var("API_HOST").unwrap_or_else(|_| "not set".to_string());
-    let api_port = std::env::var("API_PORT").unwrap_or_else(|_| "not set".to_string());
-    let secret_key = std::env::var("SECRET_KEY").unwrap_or_else(|_| "not set".to_string());
+fn env(key: &str) -> String {
+    std::env::var(key).unwrap_or_else(|_| "not set".into())
+}
 
-    // Don't expose the full secret, just confirm it exists
-    let secret_status = if secret_key != "not set" {
-        format!(
-            "Set ({}...)",
-            &secret_key.chars().take(3).collect::<String>()
-        )
-    } else {
-        "Not set".to_string()
+async fn handler() -> Json<ApiResponse> {
+    let secret = env("SECRET_KEY");
+    let secret_status = match secret.as_str() {
+        "not set" => "Not set".into(),
+        s => format!("Set ({}...)", &s[..s.len().min(3)]),
     };
 
-    Json(EnvResponse {
-        message: "Environment variables from Rust".to_string(),
-        data: json!({
-            "APP_NAME": app_name,
-            "APP_ENV": app_env,
-            "API_HOST": api_host,
-            "API_PORT": api_port,
+    Json(ApiResponse {
+        message: "Environment variables from Rust".into(),
+        data: Some(json!({
+            "APP_MODE": env("APP_MODE"),
+            "SERVER_HOST": env("SERVER_HOST"),
+            "SERVER_PORT": env("SERVER_PORT"),
+            "RUST_LOG": env("RUST_LOG"),
             "SECRET_KEY": secret_status,
-        }),
+        })),
     })
 }

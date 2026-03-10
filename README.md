@@ -1,62 +1,42 @@
 # rust-next
 
-Next.js frontend with Rust backend API server using file-system based routing.
+Full-stack template: Rust backend (Axum) + Next.js frontend + Rust WASM.
 
-## Branches
+Supports multiple deployment modes via a single codebase.
 
-- **main**: The active development branch (Rust Backend + Next.js Frontend).
-- **static**: Rust WASM + Next.js (no backend server). Ideal for static hosting.
-- **single-server**: A variation with a single server setup.
+## Modes
 
-## Architecture
+| Mode               | Description                                                      | Use Case                        |
+| ------------------ | ---------------------------------------------------------------- | ------------------------------- |
+| **full** (default) | Rust server proxies to Next.js. Single entry point on port 3000. | Production apps                 |
+| **api-only**       | Rust API standalone. Next.js runs separately with rewrites.      | Microservices, separate deploys |
+| **static**         | No Rust server. WASM + Next.js only.                             | GitHub Pages, static hosting    |
 
-This template uses a two-server architecture where Rust is the main entry point:
-
-- **Rust Server** (Port 3000) - Main entry point handling API routes
-- **Next.js Server** (Port 3001) - Frontend with hot reload in dev, optimized build in production
-- Rust proxies non-API requests to Next.js
-- Browser connects to `http://localhost:3000` for everything
-
-## Features
-
-- **Rust Backend**: Fast, type-safe API server using Axum
-- **Rust WASM**: Client-side Rust code via WebAssembly
-- **Next.js Frontend**: Modern React framework with TypeScript
-- **Single Port Access**: All requests go through Rust server on port 3000
-- **CORS Handling**: Automatic CORS configuration
-- **Hot Reload**: Development mode with Next.js hot module replacement
-- **Production Ready**: Standalone Next.js build for optimal performance
+Set via `APP_MODE` environment variable.
 
 ## Quick Start
 
 ### Prerequisites
 
-- Rust (latest stable)
-- Node.js 18+
+- [Rust](https://rustup.rs/) (latest stable)
 - [Bun](https://bun.sh/) (v1.0+)
 - [wasm-pack](https://rustwasm.github.io/wasm-pack/installer/)
 - [just](https://github.com/casey/just) command runner
 
-### Development Mode
+### Development
 
 ```bash
-just src dev
+just src install     # Install all dependencies
+just src dev         # Full-stack dev (Rust + Next.js + WASM)
 ```
 
-This starts:
+Visit `http://localhost:3000`
 
-- Builds WASM (dev mode)
-- Rust server on port 3000
-- Next.js dev server on port 3001
-- Visit `http://localhost:3000`
-
-### Production Mode
+### Production
 
 ```bash
-just src build-all
-# Run production servers
-./target/release/server    # Terminal 1
-bun start                   # Terminal 2
+just src build-all   # Build everything
+just src prod        # Run production servers
 ```
 
 ## Project Structure
@@ -64,68 +44,101 @@ bun start                   # Terminal 2
 ```
 .
 ├── src/
-│   ├── api/           # API route handlers
-│   ├── server/        # Server configuration and routing
-│   └── bin/server.rs  # Main Rust entry point
-├── wasm/              # Rust WASM source
-│   └── src/lib.rs     # WASM entry point
+│   ├── api/              # API route handlers (hello, greet, search, create, env)
+│   ├── server/           # Server config, routing, and frontend proxy
+│   ├── config.rs         # Structured configuration from env vars
+│   └── bin/server.rs     # Main entry point
+├── wasm/
+│   └── src/lib.rs        # Rust WASM exports (greet, add)
 ├── app/
-│   ├── lib/           # Frontend utilities and API client
-│   ├── page.tsx       # Home page
-│   └── layout.tsx     # Root layout
-├── Cargo.toml         # Workspace config
-├── package.json       # Node.js dependencies
-└── justfile          # Build and run commands
+│   ├── lib/
+│   │   ├── api.ts        # Typed API client
+│   │   └── basePath.ts   # Runtime base path detection (GitHub Pages)
+│   ├── wasm/page.tsx     # WASM demo page
+│   ├── page.tsx          # Home page
+│   ├── layout.tsx        # Root layout
+│   └── globals.css       # Tailwind v4 entry
+├── jfiles/               # Justfile modules (build, run, test)
+├── Cargo.toml            # Rust workspace
+├── package.json          # Frontend dependencies
+├── next.config.js        # Next.js config (mode-aware)
+└── .github/workflows/    # GitHub Pages deployment
 ```
 
-## WASM Support
+## Architecture
 
-The template includes support for Rust WASM modules.
+### Full Mode (default)
 
-1.  Code is in `wasm/src/lib.rs`
-2.  Built to `public/wasm/`
-3.  Loaded in frontend using `import` (see `app/wasm/page.tsx` for example)
+```
+Browser → Rust (port 3000) → /api/* handled by Axum
+                            → /* proxied to Next.js (port 3001)
+```
 
-To build WASM manually:
+### API-Only Mode
 
-```bash
-just src build-wasm
+```
+Browser → Next.js (port 3000) → /api/* rewritten to Rust (port 3001)
+```
+
+### Static Mode
+
+```
+Browser → Next.js / Static Export (WASM loaded from /public/wasm/)
 ```
 
 ## Environment Variables
 
-Create a `.env.local` file:
+Copy `.env.example` to `.env.local`:
 
 ```env
-SERVER_PORT=3000
-SERVER_HOST=127.0.0.1
-PORT=3001
-HOSTNAME=localhost
-RUST_LOG=info
+APP_MODE=full              # full | api-only
+SERVER_PORT=3000           # Rust server port
+SERVER_HOST=127.0.0.1      # Rust server host (0.0.0.0 for remote)
+PORT=3001                  # Next.js server port
+HOSTNAME=localhost         # Next.js host (0.0.0.0 for remote)
+RUST_LOG=info              # Logging level
 ```
 
-For remote access (e.g., Codespaces):
+### GitHub Pages
 
-- Set `SERVER_HOST=0.0.0.0`
-- Set `HOSTNAME=0.0.0.0` (dev mode only)
+```env
+GITHUB_PAGES=true
+NEXT_PUBLIC_BASE_PATH=/your-repo-name
+```
 
-## Adding New API Routes
+## Adding API Routes
 
-1. Add route handler in `src/api/mod.rs`:
+1. Create `src/api/my_route.rs`:
 
 ```rust
-async fn my_route() -> Json<MyResponse> {
-    Json(MyResponse { /* ... */ })
+use axum::{Router, response::Json, routing::get};
+use serde::Serialize;
+
+#[derive(Debug, Serialize)]
+struct MyResponse { message: String }
+
+pub fn routes() -> Router {
+    Router::new().route("/my-route", get(handler))
 }
+
+async fn handler() -> Json<MyResponse> {
+    Json(MyResponse { message: "Hello!".into() })
+}
+```
+
+2. Register in `src/api/mod.rs`:
+
+```rust
+mod my_route;
 
 pub fn routes() -> Router {
     Router::new()
-        .route("/hello", get(hello))
-        .route("/my-route", get(my_route))  // Add here
+        .merge(hello::routes())
+        .merge(my_route::routes())  // add here
 }
 ```
 
-2. Call from frontend in `app/lib/api.ts`:
+3. Call from frontend via `app/lib/api.ts`:
 
 ```typescript
 export async function myRoute(): Promise<MyResponse> {
@@ -134,63 +147,74 @@ export async function myRoute(): Promise<MyResponse> {
 }
 ```
 
-## Development Commands
+## WASM
 
-### Using Just
+Code lives in `wasm/src/lib.rs`. Functions are exported with `#[wasm_bindgen]`.
 
 ```bash
-just                        # List all available commands
-just src                    # List all src commands
+just src build-wasm       # Production build
+just src build-wasm-dev   # Dev build (faster)
+```
 
-# Development (run.just)
-just src dev                # Run BOTH servers together (Bash/WSL/Unix only!)
-just src api                # Run Rust API only
-just src frontend           # Run Next.js only
-just src api-release        # Run Rust API (release mode)
-just src frontend-prod      # Run Next.js (production mode)
+The WASM demo page is at `/wasm/`. It uses `basePath` detection for correct asset loading on GitHub Pages.
 
-# Build (build.just)
-just src build              # Build Rust for production
-just src build-api          # Build Rust API for production
-just src build-frontend     # Build Next.js for production
-just src build-wasm         # Build WASM module
-just src build-all          # Build both for production
-just src check              # Check Rust code without building
+## Commands
 
-# Format & Lint (build.just)
-just src fmt                # Format and lint ALL code (Rust + TypeScript)
-just src fmt-check          # Check formatting without changes
-just src fmt-rust           # Format Rust only
-just src fmt-ts             # Format TypeScript only
+```bash
+# Development
+just src dev              # Full-stack dev (Rust proxy + Next.js + WASM)
+just src dev-static       # Static mode (WASM + Next.js, no Rust server)
+just src api              # Rust API server only
+just src frontend         # Next.js dev server only
 
-# Test (test.just)
-just src test               # Run Rust tests
+# Production
+just src prod             # Build and run full-stack production
+just src build-all        # Build everything
+just src start-prod       # Run production (pre-built)
 
-# Maintenance (justfile)
-just src install            # Install dependencies
-just src clean              # Clean build artifacts
+# Build
+just src build            # Build Rust (release)
+just src build-api        # Build API server binary
+just src build-frontend   # Build Next.js standalone
+just src build-wasm       # Build WASM (release)
+just src build-pages      # Build for GitHub Pages (static export)
+just src check            # Check Rust without building
+
+# Format & Lint
+just src fmt              # Format everything (Rust + TypeScript)
+just src fmt-check        # Check formatting
+just src fmt-rust         # Rust only
+just src fmt-ts           # TypeScript only
+
+# Test
+just src test             # Run Rust tests
+just src test-wasm        # Run WASM tests
+
+# Maintenance
+just src install          # Install all dependencies
+just src clean            # Clean build artifacts
 ```
 
 ## Tech Stack
 
-### Backend (Rust)
+### Backend
 
-- **axum**: Modern web framework
-- **tokio**: Async runtime
-- **serde/serde_json**: Serialization
-- **tower-http**: HTTP middleware (CORS, tracing)
-- **tracing**: Structured logging
+- **Axum 0.8** - Web framework with WebSocket support
+- **Tokio** - Async runtime
+- **Tower-HTTP** - CORS, tracing, static file serving
+- **Hyper** - HTTP client for frontend proxying
 
-### WASM (Rust)
+### WASM
 
-- **wasm-bindgen**: Rust/JS interoperability
-- **web-sys**: Web APIs
+- **wasm-bindgen** - Rust/JS interoperability
+- **wasm-pack** - Build tooling
 
-### Frontend (Next.js)
+### Frontend
 
-- **React 19**: UI framework
-- **Next.js 16**: React framework with App Router
-- **TypeScript**: Type safety
+- **Next.js 16** - React framework (App Router)
+- **React 19** - UI framework
+- **Tailwind CSS v4** - Utility-first CSS
+- **TypeScript** - Type safety
 
 ## License
 

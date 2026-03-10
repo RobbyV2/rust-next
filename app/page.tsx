@@ -1,88 +1,63 @@
 'use client'
 
 import { useState } from 'react'
+import { hello, type HelloResponse } from './lib/api'
 
 export default function Home() {
-  const [apiResponse, setApiResponse] = useState<any>(null)
+  const [response, setResponse] = useState<HelloResponse | null>(null)
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const testApi = async (endpoint: string) => {
+  const handleClick = async () => {
     setLoading(true)
+    setError(null)
     try {
-      const response = await fetch(endpoint)
-      const data = await response.json()
-      setApiResponse(data)
-    } catch (error) {
-      setApiResponse({ error: 'Failed to fetch' })
+      const result = await hello()
+      setResponse(result)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred')
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
-  // Environment variables in Next.js
-  const nextjsPublicVar = process.env.NEXT_PUBLIC_API_URL
-
   return (
-    <main style={{ padding: '2rem', fontFamily: 'system-ui, sans-serif' }}>
-      <h1>Next.js + Rust API</h1>
-      <p>Test the Rust backend API endpoints:</p>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="bg-white rounded-lg shadow-xl p-8 max-w-md w-full">
+        <h1 className="text-3xl font-bold text-gray-800 mb-6 text-center">Rust + Next.js</h1>
 
-      <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem', flexWrap: 'wrap' }}>
-        <button
-          onClick={() => testApi('/api/hello')}
-          style={{ padding: '0.5rem 1rem', cursor: 'pointer' }}
-        >
-          Test /api/hello
-        </button>
-        <button
-          onClick={() => testApi('/api/greet/World')}
-          style={{ padding: '0.5rem 1rem', cursor: 'pointer' }}
-        >
-          Test /api/greet/World
-        </button>
-        <button
-          onClick={() => testApi('/api/search?q=rust')}
-          style={{ padding: '0.5rem 1rem', cursor: 'pointer' }}
-        >
-          Test /api/search?q=rust
-        </button>
-        <button
-          onClick={() => testApi('/api/env')}
-          style={{ padding: '0.5rem 1rem', cursor: 'pointer', backgroundColor: '#e0f2fe' }}
-        >
-          Test /api/env (Environment Variables)
-        </button>
-      </div>
+        <p className="text-gray-600 mb-8 text-center">
+          Full-stack template with Rust backend and Next.js frontend
+        </p>
 
-      <div
-        style={{
-          marginTop: '2rem',
-          padding: '1rem',
-          backgroundColor: '#fef3c7',
-          borderRadius: '4px',
-          fontSize: '0.9rem',
-        }}
-      >
-        <strong>Next.js Environment Variable:</strong>
-        <br />
-        NEXT_PUBLIC_API_URL = {nextjsPublicVar || 'not set'}
-      </div>
-
-      {loading && <p style={{ marginTop: '2rem' }}>Loading...</p>}
-
-      {apiResponse && !loading && (
-        <div
-          style={{
-            marginTop: '2rem',
-            padding: '1rem',
-            backgroundColor: '#f5f5f5',
-            borderRadius: '4px',
-            fontFamily: 'monospace',
-          }}
+        <button
+          onClick={handleClick}
+          disabled={loading}
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
         >
-          <h3>Response:</h3>
-          <pre>{JSON.stringify(apiResponse, null, 2)}</pre>
+          {loading ? 'Loading...' : 'Call Rust API'}
+        </button>
+
+        {response && (
+          <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+            <p className="text-green-800 font-medium">Response from Rust:</p>
+            <p className="text-green-700 mt-2">{response.message}</p>
+          </div>
+        )}
+
+        {error && (
+          <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-800 font-medium">Error:</p>
+            <p className="text-red-700 mt-2">{error}</p>
+          </div>
+        )}
+
+        <div className="mt-6 text-center">
+          <a href="/wasm/" className="text-blue-600 hover:underline text-sm">
+            WASM Demo &rarr;
+          </a>
         </div>
-      )}
-    </main>
+      </div>
+    </div>
   )
 }

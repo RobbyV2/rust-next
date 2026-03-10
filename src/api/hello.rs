@@ -1,25 +1,15 @@
 use axum::{Router, response::Json, routing::get};
-use serde::Serialize;
-use serde_json::{Value, json};
+use serde_json::json;
 
-#[derive(Debug, Serialize)]
-struct ApiResponse {
-    message: String,
-    data: Option<Value>,
-}
+use super::ApiResponse;
 
-/// Define routes for this endpoint
-/// Path: /api/hello
 pub fn routes() -> Router {
-    Router::new().route("/api/hello", get(handler))
+    Router::new().route("/hello", get(handler))
 }
 
 async fn handler() -> Json<ApiResponse> {
     Json(ApiResponse {
-        message: "Hello from Rust API!".to_string(),
-        data: Some(json!({
-            "status": "success",
-            "version": "1.0.0"
-        })),
+        message: "Hello from Rust API!".into(),
+        data: Some(json!({ "status": "success", "version": env!("CARGO_PKG_VERSION") })),
     })
 }

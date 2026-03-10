@@ -7,10 +7,11 @@ import "./run.just"
 default:
   just --list
 
-# Install dependencies
+# Install all dependencies
 install:
   cd {{ROOT}} && bun install
   cargo install taplo-cli
+  cargo install wasm-pack
 
 # Amend no edit
 amend:
