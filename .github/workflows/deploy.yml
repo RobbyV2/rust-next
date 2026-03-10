@@ -38,7 +38,7 @@ jobs:
       - name: Build Next.js
         run: bun run build
         env:
-          GITHUB_ACTIONS: true
+          GITHUB_PAGES: 'true'
           NEXT_PUBLIC_BASE_PATH: /${{ github.event.repository.name }}
 
       - name: Upload artifact

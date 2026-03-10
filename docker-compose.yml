@@ -1,0 +1,12 @@
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - APP_MODE=full
+      - SERVER_HOST=0.0.0.0
+      - SERVER_PORT=3000
+      - PORT=3001
+      - HOSTNAME=0.0.0.0
+    restart: unless-stopped

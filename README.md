@@ -39,6 +39,20 @@ just src build-all   # Build everything
 just src prod        # Run production servers
 ```
 
+### Docker
+
+```bash
+just src docker      # Build Docker image
+just src docker-run  # Run with docker compose
+```
+
+Or directly:
+
+```bash
+docker build -t rust-next .
+docker run -p 3000:3000 rust-next
+```
+
 ## Project Structure
 
 ```
@@ -62,6 +76,8 @@ just src prod        # Run production servers
 ├── Cargo.toml            # Rust workspace
 ├── package.json          # Frontend dependencies
 ├── next.config.js        # Next.js config (mode-aware)
+├── Dockerfile            # Multi-stage production build
+├── docker-compose.yml    # Container orchestration
 └── .github/workflows/    # GitHub Pages deployment
 ```
 
@@ -189,6 +205,12 @@ just src fmt-ts           # TypeScript only
 # Test
 just src test             # Run Rust tests
 just src test-wasm        # Run WASM tests
+
+# Docker
+just src docker           # Build Docker image
+just src docker-run       # Run with docker compose
+just src docker-up        # Run detached
+just src docker-down      # Stop container
 
 # Maintenance
 just src install          # Install all dependencies

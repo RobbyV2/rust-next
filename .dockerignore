@@ -1,0 +1,12 @@
+.git
+.next
+out
+target
+node_modules
+*.pem
+.env
+.env.local
+.env*.local
+.DS_Store
+i.txt
+public/wasm

@@ -3,7 +3,7 @@ export function getBasePath(): string {
     return ''
   }
 
-  const nextData = (window as Record<string, unknown>).__NEXT_DATA__ as
+  const nextData = (window as unknown as Record<string, unknown>).__NEXT_DATA__ as
     | { assetPrefix?: string }
     | undefined
   if (nextData?.assetPrefix) {

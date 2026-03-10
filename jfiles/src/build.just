@@ -66,6 +66,22 @@ fmt-ts:
   cd {{ROOT}} && bun run lint --fix
   cd {{ROOT}} && bunx prettier --write "**/*.{ts,tsx,js,jsx,json,md,mjs}"
 
+# Build Docker image
+docker:
+  cd {{ROOT}} && docker build -t rust-next .
+
+# Run Docker container
+docker-run:
+  cd {{ROOT}} && docker compose up
+
+# Run Docker container (detached)
+docker-up:
+  cd {{ROOT}} && docker compose up -d
+
+# Stop Docker container
+docker-down:
+  cd {{ROOT}} && docker compose down
+
 # Clean build artifacts
 clean:
   cd {{ROOT}} && cargo clean
