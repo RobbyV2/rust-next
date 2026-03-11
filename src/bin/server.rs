@@ -70,9 +70,12 @@ async fn main() -> anyhow::Result<()> {
         config.rate_limit_per_second, config.rate_limit_burst
     );
 
-    axum::serve(listener, app.into_make_service_with_connect_info::<SocketAddr>())
-        .with_graceful_shutdown(shutdown_signal())
-        .await?;
+    axum::serve(
+        listener,
+        app.into_make_service_with_connect_info::<SocketAddr>(),
+    )
+    .with_graceful_shutdown(shutdown_signal())
+    .await?;
 
     info!("Server shutdown complete");
     Ok(())

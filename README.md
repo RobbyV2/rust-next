@@ -2,7 +2,7 @@
 
 Full-stack template: Rust backend (Axum) + Next.js frontend + Rust WASM.
 
-Supports multiple deployment modes via a single codebase.
+Supports multiple deployment modes via a single codebase. Includes OpenAPI/Swagger UI, per-IP rate limiting, and Docker support out of the box.
 
 ## Modes
 
@@ -53,14 +53,17 @@ docker build -t rust-next .
 docker run -p 3000:3000 rust-next
 ```
 
+The Docker image uses a multi-stage build with [cargo-chef](https://github.com/LukeMathWalker/cargo-chef) for dependency caching. The runtime image is ~380MB based on `debian:bookworm-slim`. Set `APP_MODE=api-only` to run only the Rust server (no Next.js).
+
 ## Project Structure
 
 ```
 .
 ├── src/
 │   ├── api/              # API route handlers (hello, greet, search, create, env)
-│   ├── server/           # Server config, routing, and frontend proxy
-│   ├── config.rs         # Structured configuration from env vars
+│   │   └── openapi.rs    # OpenAPI spec + Swagger UI
+│   ├── server/           # Routing, rate limiting, and frontend proxy
+│   ├── config.rs         # Hierarchical config (defaults → env → CLI)
 │   └── bin/server.rs     # Main entry point
 ├── wasm/
 │   └── src/lib.rs        # Rust WASM exports (greet, add)
@@ -86,7 +89,9 @@ docker run -p 3000:3000 rust-next
 ### Full Mode (default)
 
 ```
-Browser → Rust (port 3000) → /api/* handled by Axum
+Browser → Rust (port 3000) → /api/* handled by Axum (rate limited)
+                            → /api/swagger-ui/ → Swagger UI
+                            → /api/openapi.json → OpenAPI spec
                             → /* proxied to Next.js (port 3001)
 ```
 
@@ -102,6 +107,31 @@ Browser → Next.js (port 3000) → /api/* rewritten to Rust (port 3001)
 Browser → Next.js / Static Export (WASM loaded from /public/wasm/)
 ```
 
+## API Documentation
+
+Swagger UI is available at `/api/swagger-ui/` when the server is running. The OpenAPI spec is served at `/api/openapi.json`.
+
+Swagger UI is enabled by default. Disable with:
+
+```env
+SWAGGER_UI=false
+```
+
+All API handlers are annotated with [utoipa](https://github.com/juhaku/utoipa) macros, so the spec stays in sync with the code automatically.
+
+## Rate Limiting
+
+API routes are rate limited per IP using [tower-governor](https://github.com/benwis/tower-governor). Defaults: 10-request burst, replenishing at 2 requests/second.
+
+Configure via environment variables:
+
+```env
+RATE_LIMIT_PER_SECOND=2    # Token replenish rate
+RATE_LIMIT_BURST=10         # Max burst before 429 Too Many Requests
+```
+
+Rate limiting applies only to `/api/*` routes, not the frontend proxy.
+
 ## Environment Variables
 
 Copy `.env.example` to `.env.local`:
@@ -112,7 +142,16 @@ SERVER_PORT=3000           # Rust server port
 SERVER_HOST=127.0.0.1      # Rust server host (0.0.0.0 for remote)
 PORT=3001                  # Next.js server port
 HOSTNAME=localhost         # Next.js host (0.0.0.0 for remote)
+RATE_LIMIT_PER_SECOND=2    # Rate limit replenish rate
+RATE_LIMIT_BURST=10        # Rate limit burst size
+SWAGGER_UI=false           # Disable Swagger UI (enabled by default)
 RUST_LOG=info              # Logging level
+```
+
+### CLI Overrides
+
+```bash
+./target/release/server --port 8080 --host 0.0.0.0 --mode api-only
 ```
 
 ### GitHub Pages
@@ -127,39 +166,47 @@ NEXT_PUBLIC_BASE_PATH=/your-repo-name
 1. Create `src/api/my_route.rs`:
 
 ```rust
-use axum::{Router, response::Json, routing::get};
-use serde::Serialize;
+use axum::response::Json;
+use super::ApiResponse;
 
-#[derive(Debug, Serialize)]
-struct MyResponse { message: String }
-
-pub fn routes() -> Router {
-    Router::new().route("/my-route", get(handler))
-}
-
-async fn handler() -> Json<MyResponse> {
-    Json(MyResponse { message: "Hello!".into() })
+#[utoipa::path(get, path = "/api/my-route", responses((status = 200, body = ApiResponse)))]
+pub(crate) async fn handler() -> Json<ApiResponse> {
+    Json(ApiResponse { message: "Hello!".into(), data: None })
 }
 ```
 
 2. Register in `src/api/mod.rs`:
 
 ```rust
-mod my_route;
+pub(crate) mod my_route;
 
 pub fn routes() -> Router {
     Router::new()
-        .merge(hello::routes())
-        .merge(my_route::routes())  // add here
+        .route("/hello", get(hello::handler))
+        .route("/my-route", get(my_route::handler))  // add here
+        // ...
 }
 ```
 
-3. Call from frontend via `app/lib/api.ts`:
+3. Add to OpenAPI spec in `src/api/openapi.rs`:
+
+```rust
+#[openapi(
+    paths(
+        super::hello::handler,
+        super::my_route::handler,  // add here
+        // ...
+    ),
+    // ...
+)]
+```
+
+4. Call from frontend via `app/lib/api.ts`:
 
 ```typescript
-export async function myRoute(): Promise<MyResponse> {
+export async function myRoute(): Promise<ApiResponse> {
   const response = await fetch('/api/my-route')
-  return handleResponse<MyResponse>(response)
+  return handleResponse<ApiResponse>(response)
 }
 ```
 
@@ -225,6 +272,9 @@ just src clean            # Clean build artifacts
 - **Tokio** - Async runtime
 - **Tower-HTTP** - CORS, tracing, static file serving
 - **Hyper** - HTTP client for frontend proxying
+- **utoipa 5** - OpenAPI spec generation + Swagger UI
+- **tower-governor** - Per-IP rate limiting (governor-based)
+- **config + clap** - Hierarchical configuration (env → CLI overrides)
 
 ### WASM
 
@@ -238,6 +288,7 @@ just src clean            # Clean build artifacts
 - **Tailwind CSS v4** - Utility-first CSS
 - **TypeScript** - Type safety
 
-## License
+### Infrastructure
 
-MIT
+- **Docker** - Multi-stage build with cargo-chef dependency caching
+- **GitHub Actions** - GitHub Pages deployment workflow

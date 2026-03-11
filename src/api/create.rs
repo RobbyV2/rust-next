@@ -19,7 +19,9 @@ pub(crate) struct Payload {
         (status = 400, description = "Empty name")
     )
 )]
-pub(crate) async fn handler(Json(Payload { name }): Json<Payload>) -> Result<Json<ApiResponse>, StatusCode> {
+pub(crate) async fn handler(
+    Json(Payload { name }): Json<Payload>,
+) -> Result<Json<ApiResponse>, StatusCode> {
     if name.trim().is_empty() {
         return Err(StatusCode::BAD_REQUEST);
     }

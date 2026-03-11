@@ -19,7 +19,9 @@ pub(crate) struct Params {
         (status = 400, description = "Missing or empty query parameter")
     )
 )]
-pub(crate) async fn handler(Query(Params { q }): Query<Params>) -> Result<Json<ApiResponse>, StatusCode> {
+pub(crate) async fn handler(
+    Query(Params { q }): Query<Params>,
+) -> Result<Json<ApiResponse>, StatusCode> {
     let query = q.filter(|s| !s.is_empty()).ok_or(StatusCode::BAD_REQUEST)?;
     Ok(Json(ApiResponse {
         message: format!("Search results for: {query}"),

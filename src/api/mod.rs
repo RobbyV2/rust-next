@@ -5,7 +5,10 @@ pub(crate) mod hello;
 pub mod openapi;
 pub(crate) mod search;
 
-use axum::{Router, routing::{get, post}};
+use axum::{
+    Router,
+    routing::{get, post},
+};
 use serde::Serialize;
 use serde_json::Value;
 use utoipa::ToSchema;

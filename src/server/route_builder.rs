@@ -19,8 +19,7 @@ pub fn register_routes(proxy_url: Option<&str>, config: &AppConfig) -> Router {
         .finish()
         .expect("invalid rate limit config");
 
-    let api_routes = crate::api::routes()
-        .layer(GovernorLayer::new(governor_conf));
+    let api_routes = crate::api::routes().layer(GovernorLayer::new(governor_conf));
     let router = Router::new().nest("/api", api_routes);
 
     match proxy_url {
