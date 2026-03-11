@@ -2,6 +2,7 @@
 name = "rust-next"
 version = "0.1.0"
 edition = "2024"
+description = "Rust + Next.js full-stack template with WASM support"
 
 [workspace]
 members = ["wasm"]
@@ -24,6 +25,8 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 dotenvy = "0.15"
 config = "0.15"
 clap = { version = "4", features = ["derive"] }
+utoipa = { version = "5", features = ["axum_extras"] }
+utoipa-swagger-ui = { version = "9", features = ["axum"] }
 
 [profile.release]
 opt-level = "z"

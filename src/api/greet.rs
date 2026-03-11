@@ -1,12 +1,14 @@
-use axum::{Router, extract::Path, response::Json, routing::get};
+use axum::{extract::Path, response::Json};
 
 use super::ApiResponse;
 
-pub fn routes() -> Router {
-    Router::new().route("/greet/{name}", get(handler))
-}
-
-async fn handler(Path(name): Path<String>) -> Json<ApiResponse> {
+#[utoipa::path(
+    get,
+    path = "/api/greet/{name}",
+    params(("name" = String, Path, description = "Name to greet")),
+    responses((status = 200, body = ApiResponse))
+)]
+pub(crate) async fn handler(Path(name): Path<String>) -> Json<ApiResponse> {
     Json(ApiResponse {
         message: format!("Hello, {name}!"),
         data: None,

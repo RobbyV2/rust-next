@@ -1,17 +1,14 @@
-use axum::{Router, response::Json, routing::get};
+use axum::response::Json;
 use serde_json::json;
 
 use super::ApiResponse;
-
-pub fn routes() -> Router {
-    Router::new().route("/env", get(handler))
-}
 
 fn env(key: &str) -> String {
     std::env::var(key).unwrap_or_else(|_| "not set".into())
 }
 
-async fn handler() -> Json<ApiResponse> {
+#[utoipa::path(get, path = "/api/env", responses((status = 200, body = ApiResponse)))]
+pub(crate) async fn handler() -> Json<ApiResponse> {
     let secret = env("SECRET_KEY");
     let secret_status = match secret.as_str() {
         "not set" => "Not set".into(),

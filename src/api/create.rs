@@ -1,19 +1,25 @@
-use axum::{Router, http::StatusCode, response::Json, routing::post};
+use axum::{http::StatusCode, response::Json};
 use serde::Deserialize;
 use serde_json::json;
+use utoipa::ToSchema;
 
 use super::ApiResponse;
 
-#[derive(Debug, Deserialize)]
-struct Payload {
+#[derive(Debug, Deserialize, ToSchema)]
+pub(crate) struct Payload {
     name: String,
 }
 
-pub fn routes() -> Router {
-    Router::new().route("/create", post(handler))
-}
-
-async fn handler(Json(Payload { name }): Json<Payload>) -> Result<Json<ApiResponse>, StatusCode> {
+#[utoipa::path(
+    post,
+    path = "/api/create",
+    request_body = Payload,
+    responses(
+        (status = 200, body = ApiResponse),
+        (status = 400, description = "Empty name")
+    )
+)]
+pub(crate) async fn handler(Json(Payload { name }): Json<Payload>) -> Result<Json<ApiResponse>, StatusCode> {
     if name.trim().is_empty() {
         return Err(StatusCode::BAD_REQUEST);
     }
