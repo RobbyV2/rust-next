@@ -1,3 +1,5 @@
+use std::net::SocketAddr;
+
 use axum::http::{HeaderName, Method, header};
 use clap::Parser;
 use rust_next::config::{AppConfig, AppMode, CliOverrides};
@@ -46,7 +48,7 @@ async fn main() -> anyhow::Result<()> {
         .allow_credentials(true);
 
     let proxy_url = config.proxy_url();
-    let app = build_router(proxy_url.as_deref()).layer(cors);
+    let app = build_router(proxy_url.as_deref(), &config).layer(cors);
 
     let addr = config.addr();
     let listener = tokio::net::TcpListener::bind(&addr).await?;
@@ -63,7 +65,12 @@ async fn main() -> anyhow::Result<()> {
         info!("Proxying frontend requests to {url}");
     }
 
-    axum::serve(listener, app)
+    info!(
+        "Rate limiting: {} req/s, burst {}",
+        config.rate_limit_per_second, config.rate_limit_burst
+    );
+
+    axum::serve(listener, app.into_make_service_with_connect_info::<SocketAddr>())
         .with_graceful_shutdown(shutdown_signal())
         .await?;
 

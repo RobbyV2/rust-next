@@ -8,9 +8,19 @@ use axum::{
 };
 use hyper_util::client::legacy::Client;
 use hyper_util::rt::TokioExecutor;
+use tower_governor::{GovernorLayer, governor::GovernorConfigBuilder};
 
-pub fn register_routes(proxy_url: Option<&str>) -> Router {
-    let api_routes = crate::api::routes();
+use crate::config::AppConfig;
+
+pub fn register_routes(proxy_url: Option<&str>, config: &AppConfig) -> Router {
+    let governor_conf = GovernorConfigBuilder::default()
+        .per_second(config.rate_limit_per_second)
+        .burst_size(config.rate_limit_burst)
+        .finish()
+        .expect("invalid rate limit config");
+
+    let api_routes = crate::api::routes()
+        .layer(GovernorLayer::new(governor_conf));
     let router = Router::new().nest("/api", api_routes);
 
     match proxy_url {

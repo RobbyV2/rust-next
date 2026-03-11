@@ -27,6 +27,7 @@ config = "0.15"
 clap = { version = "4", features = ["derive"] }
 utoipa = { version = "5", features = ["axum_extras"] }
 utoipa-swagger-ui = { version = "9", features = ["axum"] }
+tower_governor = "0.8"
 
 [profile.release]
 opt-level = "z"

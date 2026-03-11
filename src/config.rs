@@ -17,6 +17,8 @@ pub struct AppConfig {
     pub port: u16,
     pub server_proxy_url: Option<String>,
     pub database_url: Option<String>,
+    pub rate_limit_per_second: u64,
+    pub rate_limit_burst: u32,
 }
 
 impl AppConfig {
@@ -26,6 +28,8 @@ impl AppConfig {
             .set_default("server_host", "127.0.0.1")?
             .set_default("server_port", 3000_i64)?
             .set_default("port", 3001_i64)?
+            .set_default("rate_limit_per_second", 2_i64)?
+            .set_default("rate_limit_burst", 10_i64)?
             .add_source(config::Environment::default());
 
         if let Some(ref host) = cli.host {
