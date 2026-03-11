@@ -138,10 +138,9 @@ Copy `.env.example` to `.env.local`:
 
 ```env
 APP_MODE=full              # full | api-only
+HOST=127.0.0.1             # Bind address for both servers (0.0.0.0 for remote)
 SERVER_PORT=3000           # Rust server port
-SERVER_HOST=127.0.0.1      # Rust server host (0.0.0.0 for remote)
 PORT=3001                  # Next.js server port
-HOSTNAME=localhost         # Next.js host (0.0.0.0 for remote)
 RATE_LIMIT_PER_SECOND=2    # Rate limit replenish rate
 RATE_LIMIT_BURST=10        # Rate limit burst size
 SWAGGER_UI=false           # Disable Swagger UI (enabled by default)

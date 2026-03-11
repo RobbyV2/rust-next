@@ -1,3 +1,10 @@
+const API = (() => {
+  if (typeof window !== 'undefined') return '/api'
+  const host = process.env.HOST || '127.0.0.1'
+  const port = process.env.SERVER_PORT || '3000'
+  return `http://${host}:${port}/api`
+})()
+
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -23,7 +30,7 @@ export interface HelloResponse {
 }
 
 export async function hello(): Promise<HelloResponse> {
-  const response = await fetch('/api/hello')
+  const response = await fetch(`${API}/hello`)
   return handleResponse<HelloResponse>(response)
 }
 
@@ -32,7 +39,7 @@ export interface GreetResponse {
 }
 
 export async function greet(name: string): Promise<GreetResponse> {
-  const response = await fetch(`/api/greet/${encodeURIComponent(name)}`)
+  const response = await fetch(`${API}/greet/${encodeURIComponent(name)}`)
   return handleResponse<GreetResponse>(response)
 }
 
@@ -42,6 +49,6 @@ export interface SearchResponse {
 }
 
 export async function search(query: string): Promise<SearchResponse> {
-  const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`)
+  const response = await fetch(`${API}/search?q=${encodeURIComponent(query)}`)
   return handleResponse<SearchResponse>(response)
 }

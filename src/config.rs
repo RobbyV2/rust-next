@@ -12,7 +12,7 @@ pub enum AppMode {
 #[derive(Debug, Clone, Deserialize)]
 pub struct AppConfig {
     pub app_mode: AppMode,
-    pub server_host: String,
+    pub host: String,
     pub server_port: u16,
     pub port: u16,
     pub server_proxy_url: Option<String>,
@@ -25,7 +25,7 @@ impl AppConfig {
     pub fn load(cli: &CliOverrides) -> anyhow::Result<Self> {
         let mut builder = config::Config::builder()
             .set_default("app_mode", "full")?
-            .set_default("server_host", "127.0.0.1")?
+            .set_default("host", "127.0.0.1")?
             .set_default("server_port", 3000_i64)?
             .set_default("port", 3001_i64)?
             .set_default("rate_limit_per_second", 2_i64)?
@@ -33,7 +33,7 @@ impl AppConfig {
             .add_source(config::Environment::default());
 
         if let Some(ref host) = cli.host {
-            builder = builder.set_override("server_host", host.as_str())?;
+            builder = builder.set_override("host", host.as_str())?;
         }
         if let Some(port) = cli.port {
             builder = builder.set_override("server_port", port as i64)?;
@@ -46,7 +46,7 @@ impl AppConfig {
     }
 
     pub fn addr(&self) -> String {
-        format!("{}:{}", self.server_host, self.server_port)
+        format!("{}:{}", self.host, self.server_port)
     }
 
     pub fn proxy_url(&self) -> Option<Arc<str>> {

@@ -5,9 +5,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "bun .next/standalone/server.js",
+    "dev": "dotenvx run --convention=nextjs --quiet -- bash -c 'HOSTNAME=${HOST:-localhost} exec next dev'",
+    "build": "dotenvx run --convention=nextjs --quiet -- next build",
+    "start": "dotenvx run --convention=nextjs --quiet -- bash -c 'HOSTNAME=${HOST:-0.0.0.0} exec bun .next/standalone/server.js'",
     "lint": "eslint .",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,mjs}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md,mjs}\""
@@ -19,6 +19,7 @@
     "typescript": "^5.8.3"
   },
   "devDependencies": {
+    "@dotenvx/dotenvx": "^1.54.1",
     "@eslint/js": "^10.0.0",
     "@tailwindcss/postcss": "^4.2.0",
     "@types/node": "^22.19.2",

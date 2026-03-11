@@ -19,7 +19,7 @@ pub(crate) async fn handler() -> Json<ApiResponse> {
         message: "Environment variables from Rust".into(),
         data: Some(json!({
             "APP_MODE": env("APP_MODE"),
-            "SERVER_HOST": env("SERVER_HOST"),
+            "HOST": env("HOST"),
             "SERVER_PORT": env("SERVER_PORT"),
             "RUST_LOG": env("RUST_LOG"),
             "SECRET_KEY": secret_status,
