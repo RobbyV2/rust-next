@@ -1,9 +1,20 @@
-const API = (() => {
-  if (typeof window !== 'undefined') return '/api'
-  const host = process.env.HOST || '127.0.0.1'
-  const port = process.env.SERVER_PORT || '3000'
-  return `http://${host}:${port}/api`
-})()
+export function resolveApiBase(
+  url: string | undefined,
+  hasWindow: boolean,
+  host?: string,
+  port?: string
+): string {
+  if (url) return `${url.replace(/\/+$/, '')}/api`
+  if (hasWindow) return '/api'
+  return `http://${host || '127.0.0.1'}:${port || '3000'}/api`
+}
+
+const API = resolveApiBase(
+  process.env.NEXT_PUBLIC_API_URL,
+  typeof window !== 'undefined',
+  process.env.HOST,
+  process.env.SERVER_PORT
+)
 
 export class ApiError extends Error {
   constructor(

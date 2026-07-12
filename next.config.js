@@ -14,7 +14,9 @@ const nextConfig = {
   },
 }
 
-if (appMode === 'api-only') {
+// `rewrites()` is incompatible with `output: 'export'`, so skip the api-only proxy
+// rewrite entirely when building a static export.
+if (!isGitHubPages && appMode === 'api-only') {
   const serverPort = process.env.SERVER_PORT || '3000'
   const serverHost = process.env.HOST || 'localhost'
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || `http://${serverHost}:${serverPort}`
