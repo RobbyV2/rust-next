@@ -53,7 +53,7 @@ docker build -t rust-next .
 docker run -p 3000:3000 rust-next
 ```
 
-The Docker image uses a multi-stage build with [cargo-chef](https://github.com/LukeMathWalker/cargo-chef) for dependency caching. The runtime image is ~380MB based on `debian:bookworm-slim`. Set `APP_MODE=api-only` to run only the Rust server (no Next.js).
+The Docker image uses a multi-stage build with [cargo-chef](https://github.com/LukeMathWalker/cargo-chef) for dependency caching. The runtime image is ~380MB based on `debian:trixie-slim`. Set `APP_MODE=api-only` to run only the Rust server (no Next.js).
 
 ## Project Structure
 
@@ -271,7 +271,7 @@ just src clean            # Clean build artifacts
 - **Tokio** - Async runtime
 - **Tower-HTTP** - CORS, tracing, static file serving
 - **Hyper** - HTTP client for frontend proxying
-- **utoipa 5** - OpenAPI spec generation + Swagger UI
+- **utoipa 6** - OpenAPI spec generation + Swagger UI
 - **tower-governor** - Per-IP rate limiting (governor-based)
 - **config + clap** - Hierarchical configuration (env → CLI overrides)
 
@@ -285,7 +285,7 @@ just src clean            # Clean build artifacts
 - **Next.js 16** - React framework (App Router)
 - **React 19** - UI framework
 - **Tailwind CSS v4** - Utility-first CSS
-- **TypeScript** - Type safety
+- **TypeScript 7** - Type safety (native `tsc`; typescript-eslint runs on the TS 6 API via `@typescript/typescript6`)
 
 ### Infrastructure
 

@@ -14,21 +14,44 @@
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md,mjs}\""
   },
   "dependencies": {
-    "next": "^16.2.10",
-    "react": "^19.2.7",
-    "react-dom": "^19.2.7",
-    "typescript": "^5.9.3"
+    "next": "^16.4.3",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "typescript": "^7.0.2"
   },
   "devDependencies": {
-    "@dotenvx/dotenvx": "^1.75.1",
+    "@dotenvx/dotenvx": "^2.38.2",
     "@eslint/js": "^10.0.1",
-    "@tailwindcss/postcss": "^4.3.2",
-    "@types/node": "^22.20.1",
-    "@types/react": "^19.2.17",
-    "@types/react-dom": "^19.2.3",
-    "eslint": "^10.7.0",
-    "prettier": "^3.9.5",
-    "tailwindcss": "^4.3.2",
-    "typescript-eslint": "^8.63.0"
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/node": "^26.6.5",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "eslint": "^10.13.0",
+    "prettier": "^3.9.10",
+    "tailwindcss": "^4.3.3",
+    "typescript-eslint": "^8.72.0"
+  },
+  "overrides": {
+    "typescript-eslint": {
+      "typescript": "npm:@typescript/typescript6@^6.0.2"
+    },
+    "@typescript-eslint/eslint-plugin": {
+      "typescript": "npm:@typescript/typescript6@^6.0.2"
+    },
+    "@typescript-eslint/parser": {
+      "typescript": "npm:@typescript/typescript6@^6.0.2"
+    },
+    "@typescript-eslint/project-service": {
+      "typescript": "npm:@typescript/typescript6@^6.0.2"
+    },
+    "@typescript-eslint/type-utils": {
+      "typescript": "npm:@typescript/typescript6@^6.0.2"
+    },
+    "@typescript-eslint/typescript-estree": {
+      "typescript": "npm:@typescript/typescript6@^6.0.2"
+    },
+    "ts-api-utils": {
+      "typescript": "npm:@typescript/typescript6@^6.0.2"
+    }
   }
 }

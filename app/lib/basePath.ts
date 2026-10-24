@@ -4,8 +4,7 @@ export function getBasePath(): string {
   }
 
   const nextData = (window as unknown as Record<string, unknown>).__NEXT_DATA__ as
-    | { assetPrefix?: string }
-    | undefined
+    { assetPrefix?: string } | undefined
   if (nextData?.assetPrefix) {
     return nextData.assetPrefix.trim()
   }
