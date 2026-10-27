@@ -138,7 +138,8 @@ Copy `.env.example` to `.env.local`:
 
 ```env
 APP_MODE=full              # full | api-only
-HOST=127.0.0.1             # Bind address for both servers (0.0.0.0 for remote)
+HOST=127.0.0.1             # Rust server bind address (0.0.0.0 for remote)
+FRONTEND_HOST=127.0.0.1    # Next.js bind address behind the Rust proxy (keep it local)
 SERVER_PORT=3000           # Rust server port
 PORT=3001                  # Next.js server port
 RATE_LIMIT_PER_SECOND=2    # Rate limit replenish rate
