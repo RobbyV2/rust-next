@@ -46,7 +46,49 @@ pub fn register_routes(proxy_url: Option<&str>, config: &AppConfig) -> Router {
     }
 }
 
+const DEV_HMR: [&str; 2] = ["/_next/hmr", "/_next/webpack-hmr"];
+const DEV_ENDPOINTS: [&str; 9] = [
+    "/__nextjs_attach-nodejs-inspector",
+    "/__nextjs_devtools_config",
+    "/__nextjs_disable_dev_indicator",
+    "/__nextjs_launch-editor",
+    "/__nextjs_original-stack-frame",
+    "/__nextjs_original-stack-frames",
+    "/__nextjs_restart_dev",
+    "/__nextjs_server_status",
+    "/__nextjs_source-map",
+];
+
+// The frontend only serves pages, so refuse anything else before it reaches Next.js:
+// server action calls (`Next-Action`, the React2Shell probe shape), protocol upgrades
+// other than the dev-server HMR socket, and methods other than GET/HEAD (except the
+// dev overlay's own endpoints). The API under /api is routed separately and unaffected.
+fn frontend_refusal(req: &Request) -> Option<Response> {
+    let path = req.uri().path();
+    let headers = req.headers();
+    if headers.contains_key("next-action") {
+        return Some(StatusCode::NOT_FOUND.into_response());
+    }
+    if headers.contains_key(hyper::header::UPGRADE) && !DEV_HMR.contains(&path) {
+        return Some(StatusCode::NOT_FOUND.into_response());
+    }
+    match *req.method() {
+        hyper::Method::GET | hyper::Method::HEAD => None,
+        _ if DEV_ENDPOINTS.contains(&path) => None,
+        _ => Some(
+            (
+                StatusCode::METHOD_NOT_ALLOWED,
+                [(hyper::header::ALLOW, "GET, HEAD")],
+            )
+                .into_response(),
+        ),
+    }
+}
+
 async fn proxy_to_frontend(proxy_url: Arc<str>, client: ProxyClient, mut req: Request) -> Response {
+    if let Some(refused) = frontend_refusal(&req) {
+        return refused;
+    }
     let path_query = req
         .uri()
         .path_and_query()
@@ -102,6 +144,65 @@ async fn proxy_to_frontend(proxy_url: Arc<str>, client: ProxyClient, mut req: Re
         Err(e) => {
             tracing::error!("Proxy error: {e}");
             (StatusCode::BAD_GATEWAY, "Frontend server not available").into_response()
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn req(method: &str, path: &str, headers: &[(&str, &str)]) -> Request {
+        let mut builder = Request::builder().method(method).uri(path);
+        for (k, v) in headers {
+            builder = builder.header(*k, *v);
+        }
+        builder.body(Body::empty()).expect("request")
+    }
+
+    fn status(r: Request) -> Option<StatusCode> {
+        frontend_refusal(&r).map(|res| res.status())
+    }
+
+    #[test]
+    fn the_frontend_proxy_only_forwards_page_traffic() {
+        assert_eq!(status(req("GET", "/", &[])), None);
+        assert_eq!(status(req("HEAD", "/wasm", &[("rsc", "1")])), None);
+        for hmr in DEV_HMR {
+            assert_eq!(status(req("GET", hmr, &[("upgrade", "websocket")])), None);
+        }
+        assert_eq!(
+            status(req("POST", "/__nextjs_original-stack-frames", &[])),
+            None
+        );
+        for probe in [
+            req("POST", "/", &[("next-action", "x")]),
+            req(
+                "GET",
+                "/",
+                &[("next-action", "71039463937fee66205500a659a835c340716e9a")],
+            ),
+            req("GET", "/", &[("upgrade", "websocket")]),
+            req("GET", "/x", &[("upgrade", "h2c")]),
+        ] {
+            assert_eq!(status(probe), Some(StatusCode::NOT_FOUND));
+        }
+        for sneaky in [
+            "/__nextjs_x/../",
+            "/__nextjs_source-map/../../",
+            "/__nextjs_source%2Dmap",
+            "/__nextjs_",
+        ] {
+            assert_eq!(
+                status(req("POST", sneaky, &[])),
+                Some(StatusCode::METHOD_NOT_ALLOWED)
+            );
+        }
+        for method in ["POST", "PUT", "DELETE", "PATCH"] {
+            assert_eq!(
+                status(req(method, "/", &[])),
+                Some(StatusCode::METHOD_NOT_ALLOWED)
+            );
         }
     }
 }
